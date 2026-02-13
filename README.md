@@ -67,8 +67,8 @@ SMTP_PASS=
 SMTP_FROM=APIScheduler <no-reply@localhost>
 
 ADMIN_EMAIL=admin@admin.it
-ADMIN_PASSWORD=qwerty123
-ADMIN_NAME=Slavic
+ADMIN_PASSWORD=changeme
+ADMIN_NAME=
 ```
 
 > `QUEUE_WORKER=true` avvia anche il worker per schedulazioni/monitor.
@@ -76,11 +76,11 @@ ADMIN_NAME=Slavic
 ### SMTP (Amazon SES)
 Esempio:
 ```
-SMTP_HOST=email-smtp.eu-central-1.amazonaws.com
+SMTP_HOST=...
 SMTP_PORT=587
-SMTP_USER=AKIA...
+SMTP_USER=...
 SMTP_PASS=...
-SMTP_FROM=support@aevoluta.com
+SMTP_FROM=...
 ```
 Assicurati che il dominio sia verificato su SES. Se sei in sandbox, puoi inviare solo a destinatari verificati.
 
