@@ -27,7 +27,15 @@ export async function notificationRoutes(app: FastifyInstance) {
     { preHandler: [app.authenticate, rolePreHandler(["OWNER", "ADMIN", "EDITOR"])] },
     async (request, reply) => {
       const input = channelSchema.parse(request.body);
-      const channel = await prisma.notificationChannel.create({ data: input });
+      const channel = await prisma.notificationChannel.create({
+        data: {
+          type: input.type,
+          name: input.name,
+          config: input.config,
+          enabled: input.enabled ?? true,
+          workspaceId: input.workspaceId,
+        },
+      });
       await logAudit(request, {
         action: "notification.create",
         entityType: "NotificationChannel",
@@ -45,7 +53,12 @@ export async function notificationRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { channelId } = request.params as { channelId: string };
       const input = channelSchema.partial().parse(request.body);
-      const channel = await prisma.notificationChannel.update({ where: { id: channelId }, data: input });
+      const data: Record<string, unknown> = {};
+      if (input.type !== undefined) data.type = input.type;
+      if (input.name !== undefined) data.name = input.name;
+      if (input.config !== undefined) data.config = input.config;
+      if (input.enabled !== undefined) data.enabled = input.enabled;
+      const channel = await prisma.notificationChannel.update({ where: { id: channelId }, data });
       await logAudit(request, {
         action: "notification.update",
         entityType: "NotificationChannel",

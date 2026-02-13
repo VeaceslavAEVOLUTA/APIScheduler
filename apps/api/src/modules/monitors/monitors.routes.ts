@@ -140,7 +140,12 @@ export async function monitorRoutes(app: FastifyInstance) {
         entityType: "Monitor",
         entityId: monitor.id,
         workspaceId: monitor.workspaceId,
-        metadata: { name: monitor.name, status: result.status, statusCode: result.statusCode },
+        metadata: {
+          name: monitor.name,
+          status: result.error ? "FAILED" : "SUCCESS",
+          statusCode: result.statusCode,
+          error: result.error || null,
+        },
       });
       return reply.send(result);
     }
