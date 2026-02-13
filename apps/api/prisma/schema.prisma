@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+  HEAD
+  OPTIONS
+}
+
+enum ScheduleType {
+  CRON
+  INTERVAL
+  ONE_SHOT
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELED
+}
+
+enum MonitorType {
+  HTTP
+  PING
+  TCP
+  TLS
+}
+
+enum NotificationType {
+  EMAIL
+  SLACK
+  TELEGRAM
+  DISCORD
+  TEAMS
+  WEBHOOK
+}
+
+model User {
+  id             String      @id @default(cuid())
+  email          String      @unique
+  passwordHash   String
+  name           String?
+  firstName      String?
+  lastName       String?
+  isSuperAdmin   Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  memberships    Membership[]
+  invitations    Invitation[] @relation("InvitedBy")
+  resetTokens    PasswordResetToken[]
+  auditLogs      AuditLog[]   @relation("AuditActor")
+}
+
+model Workspace {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  statusPageEnabled Boolean   @default(true)
+  statusTitle   String?
+  statusDescription String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  memberships   Membership[]
+  workgroups    Workgroup[]
+  apiRequests   ApiRequest[]
+  invitations   Invitation[]
+  monitors      Monitor[]
+  schedules     Schedule[]
+  notificationChannels NotificationChannel[]
+}
+
+model Workgroup {
+  id          String      @id @default(cuid())
+  name        String
+  workspaceId String
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  apiRequests ApiRequest[]
+  schedules   Schedule[]
+  monitors    Monitor[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Membership {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        UserRole
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id])
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+}
+
+model Invitation {
+  id           String       @id @default(cuid())
+  email        String
+  role         UserRole
+  status       InviteStatus @default(PENDING)
+  token        String       @unique
+  workspaceId  String
+  invitedById  String
+  createdAt    DateTime     @default(now())
+  expiresAt    DateTime
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id])
+  invitedBy  User      @relation("InvitedBy", fields: [invitedById], references: [id])
+}
+
+model ApiRequest {
+  id            String     @id @default(cuid())
+  name          String
+  method        HttpMethod
+  url           String
+  headers       Json?
+  query         Json?
+  body          Json?
+  timeoutMs     Int        @default(15000)
+  followRedirects Boolean  @default(true)
+  retryPolicy   Json?
+  auth          Json?
+  workspaceId   String
+  workgroupId   String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workgroup   Workgroup? @relation(fields: [workgroupId], references: [id])
+  schedules   Schedule[]
+}
+
+model Schedule {
+  id            String       @id @default(cuid())
+  name          String
+  type          ScheduleType
+  cron          String?
+  intervalMs    Int?
+  enabled       Boolean      @default(true)
+  showOnStatus  Boolean      @default(true)
+  activeFrom    String?
+  activeTo      String?
+  activeTimezone String?
+  maxRetries    Int          @default(0)
+  backoffMs     Int          @default(0)
+  failureThreshold Int       @default(1)
+  circuitBreakerThreshold Int @default(0)
+  circuitBreakerDurationMs Int @default(0)
+  alertOnRecovery Boolean    @default(true)
+  conditions    Json?
+  workspaceId   String
+  workgroupId   String?
+  apiRequestId  String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workgroup   Workgroup? @relation(fields: [workgroupId], references: [id])
+  apiRequest  ApiRequest @relation(fields: [apiRequestId], references: [id])
+  runs        JobRun[]
+  state       ScheduleState?
+}
+
+model JobRun {
+  id          String     @id @default(cuid())
+  scheduleId  String
+  status      RunStatus
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  responseMs  Int?
+  statusCode  Int?
+  error       String?
+  response    Json?
+
+  schedule   Schedule @relation(fields: [scheduleId], references: [id])
+}
+
+model Monitor {
+  id            String      @id @default(cuid())
+  name          String
+  type          MonitorType
+  url           String?
+  host          String?
+  port          Int?
+  intervalMs    Int         @default(60000)
+  timeoutMs     Int         @default(10000)
+  expectedStatus Int?
+  headers       Json?
+  enabled       Boolean     @default(true)
+  showOnStatus  Boolean     @default(true)
+  activeFrom    String?
+  activeTo      String?
+  activeTimezone String?
+  failureThreshold Int      @default(1)
+  alertOnRecovery Boolean   @default(true)
+  workspaceId   String
+  workgroupId   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id])
+  workgroup  Workgroup? @relation(fields: [workgroupId], references: [id])
+  checks     MonitorCheck[]
+  state      MonitorState?
+}
+
+model MonitorCheck {
+  id          String     @id @default(cuid())
+  monitorId   String
+  status      RunStatus
+  responseMs  Int?
+  statusCode  Int?
+  error       String?
+  checkedAt   DateTime   @default(now())
+
+  monitor    Monitor @relation(fields: [monitorId], references: [id])
+}
+
+model NotificationChannel {
+  id          String           @id @default(cuid())
+  type        NotificationType
+  name        String
+  config      Json
+  enabled     Boolean          @default(true)
+  workspaceId String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model ScheduleState {
+  id                 String   @id @default(cuid())
+  scheduleId         String   @unique
+  consecutiveFailures Int     @default(0)
+  consecutiveSuccesses Int    @default(0)
+  circuitOpenUntil   DateTime?
+  updatedAt          DateTime @updatedAt
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id])
+}
+
+model MonitorState {
+  id                 String   @id @default(cuid())
+  monitorId          String   @unique
+  consecutiveFailures Int     @default(0)
+  consecutiveSuccesses Int    @default(0)
+  updatedAt          DateTime @updatedAt
+
+  monitor Monitor @relation(fields: [monitorId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  workspaceId String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [id])
+}

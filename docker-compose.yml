@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16
+    container_name: apischeduler-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: apischeduler
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: apischeduler-redis
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: apischeduler-api
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/apischeduler?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: change_me
+      JWT_EXPIRES_IN: 7d
+      BCRYPT_ROUNDS: 12
+      QUEUE_WORKER: "true"
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: apischeduler-web
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
