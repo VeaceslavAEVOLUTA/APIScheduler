@@ -9,7 +9,6 @@ RUN npm install
 
 COPY apps/api apps/api
 COPY packages/shared packages/shared
-COPY .env.example .env
 
 RUN npm --workspace apps/api run prisma:generate
 RUN npm --workspace apps/api run build

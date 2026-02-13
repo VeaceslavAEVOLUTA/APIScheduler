@@ -1,13 +1,15 @@
 FROM node:20-alpine
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 COPY package.json package.json
 COPY apps/web/package.json apps/web/package.json
 
 RUN npm install
 
 COPY apps/web apps/web
-COPY .env.example .env
 
 RUN npm --workspace apps/web run build
 
