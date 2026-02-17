@@ -61,6 +61,18 @@ export default function WorkspacesPage() {
     }
   }, [items, activeWorkspaceId]);
 
+  useEffect(() => {
+    if (!pendingDelete) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPendingDelete(null);
+        setConfirmInput("");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pendingDelete]);
+
   const toggleStatus = async (enabled: boolean) => {
     if (!activeWorkspaceId) return;
     await apiFetch(`/workspaces/${activeWorkspaceId}`, {
@@ -254,8 +266,11 @@ export default function WorkspacesPage() {
       </div>
 
       {pendingDelete && (
-        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div className="modal-panel glass w-full max-w-md rounded-3xl p-6 shadow-edge">
+        <div
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-6"
+          onClick={() => { setPendingDelete(null); setConfirmInput(""); }}
+        >
+          <div className="modal-panel glass w-full max-w-md rounded-3xl p-6 shadow-edge" onClick={(e) => e.stopPropagation()}>
             <div className="text-xs uppercase tracking-[0.2em] text-slate">Conferma eliminazione</div>
             <div className="mt-2 text-sm text-slate">Scrivi "{confirmName}" per confermare.</div>
             <input

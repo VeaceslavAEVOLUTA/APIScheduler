@@ -43,6 +43,15 @@ export default function MonitorsPage() {
     return () => window.removeEventListener("workspace:active", onActive as EventListener);
   }, []);
 
+  useEffect(() => {
+    if (!editMonitor) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEditMonitor(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editMonitor]);
+
   const create = async () => {
     setError(null);
     try {
@@ -281,8 +290,8 @@ export default function MonitorsPage() {
       />
 
       {editMonitor && (
-        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div className="modal-panel glass w-full max-w-2xl rounded-3xl p-6 shadow-edge">
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-6" onClick={() => setEditMonitor(null)}>
+          <div className="modal-panel glass w-full max-w-2xl rounded-3xl p-6 shadow-edge" onClick={(e) => e.stopPropagation()}>
             <div className="text-xs uppercase tracking-[0.2em] text-slate">Opzioni monitor</div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div className="field">

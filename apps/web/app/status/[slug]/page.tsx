@@ -1,5 +1,15 @@
-import { API_URL } from "../../lib/api";
+﻿import { API_URL } from "../../lib/api";
 import RefreshCountdown from "./refresh-countdown";
+
+type HistoryPoint = {
+  ok: boolean;
+  status: string;
+  timestamp?: string | null;
+  responseMs?: number | null;
+  statusCode?: number | null;
+  response?: unknown;
+  error?: string | null;
+};
 
 type StatusResponse = {
   workspace: { id: string; name: string; slug: string; statusTitle: string; statusDescription?: string | null };
@@ -9,7 +19,7 @@ type StatusResponse = {
     lastStatus: string;
     lastCheckedAt?: string | null;
     uptimePct: number;
-    history: boolean[];
+    history: HistoryPoint[];
   }>;
   schedules: Array<{
     id: string;
@@ -17,15 +27,28 @@ type StatusResponse = {
     lastStatus: string;
     lastFinishedAt?: string | null;
     uptimePct: number;
-    history: boolean[];
+    history: HistoryPoint[];
   }>;
 };
 
-function HistoryBar({ items }: { items: boolean[] }) {
+function formatDetail(item: HistoryPoint) {
+  const ts = item.timestamp ? new Date(item.timestamp).toLocaleString("it-IT") : "n/d";
+  const responseRaw = item.response != null ? JSON.stringify(item.response) : item.error || "nessuna risposta";
+  const responseShort = responseRaw.length > 180 ? `${responseRaw.slice(0, 180)}...` : responseRaw;
+  const code = item.statusCode != null ? ` · HTTP ${item.statusCode}` : "";
+  const ms = item.responseMs != null ? ` · ${item.responseMs}ms` : "";
+  return `${item.status}${code}${ms}\n${ts}\n${responseShort}`;
+}
+
+function HistoryBar({ items }: { items: HistoryPoint[] }) {
   return (
     <div className="flex items-center gap-1">
-      {items.map((ok, i) => (
-        <span key={i} className={`h-3 w-2 rounded-full ${ok ? "bg-emerald-400" : "bg-rose-400"}`} />
+      {items.map((item, i) => (
+        <span
+          key={i}
+          className={`h-3 w-2 rounded-full ${item.ok ? "bg-emerald-400" : "bg-rose-400"}`}
+          title={formatDetail(item)}
+        />
       ))}
     </div>
   );

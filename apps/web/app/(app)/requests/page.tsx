@@ -35,7 +35,11 @@ export default function RequestsPage() {
   const load = async () => {
     const workspaces = await apiFetch<Array<{ id: string }>>("/workspaces");
     const workspaceId = resolveActiveWorkspaceId(workspaces);
-    if (!workspaceId) return;
+    if (!workspaceId) {
+      setItems([]);
+      setError("Nessun workspace disponibile. Crea o seleziona un workspace prima di aggiungere richieste API.");
+      return;
+    }
     const res = await apiFetch<RequestItem[]>(`/requests/${workspaceId}`);
     setItems(res);
   };
@@ -68,7 +72,10 @@ export default function RequestsPage() {
       }
       const workspaces = await apiFetch<Array<{ id: string }>>("/workspaces");
       const workspaceId = resolveActiveWorkspaceId(workspaces);
-      if (!workspaceId) return;
+      if (!workspaceId) {
+        setError("Nessun workspace disponibile. Crea o seleziona un workspace.");
+        return;
+      }
 
       const auth =
         authType === "bearer"

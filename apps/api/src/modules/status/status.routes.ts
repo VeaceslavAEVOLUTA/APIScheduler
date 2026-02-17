@@ -61,7 +61,15 @@ export async function statusRoutes(app: FastifyInstance) {
         lastStatus: list[0]?.status || "UNKNOWN",
         lastCheckedAt: list[0]?.checkedAt || null,
         uptimePct: pct,
-        history: recent.map((x) => x.status === "SUCCESS"),
+        history: recent.map((x) => ({
+          ok: x.status === "SUCCESS",
+          status: x.status,
+          timestamp: x.checkedAt,
+          responseMs: x.responseMs ?? null,
+          statusCode: x.statusCode ?? null,
+          response: null,
+          error: x.error ?? null,
+        })),
       };
     });
 
@@ -77,7 +85,15 @@ export async function statusRoutes(app: FastifyInstance) {
         lastStatus: list[0]?.status || "UNKNOWN",
         lastFinishedAt: list[0]?.finishedAt || null,
         uptimePct: pct,
-        history: recent.map((x) => x.status === "SUCCESS"),
+        history: recent.map((x) => ({
+          ok: x.status === "SUCCESS",
+          status: x.status,
+          timestamp: x.finishedAt || x.startedAt || null,
+          responseMs: x.responseMs ?? null,
+          statusCode: x.statusCode ?? null,
+          response: x.response ?? null,
+          error: x.error ?? null,
+        })),
       };
     });
 

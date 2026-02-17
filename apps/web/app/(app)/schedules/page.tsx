@@ -54,6 +54,15 @@ export default function SchedulesPage() {
     return () => window.removeEventListener("workspace:active", onActive as EventListener);
   }, []);
 
+  useEffect(() => {
+    if (!editSchedule) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEditSchedule(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editSchedule]);
+
   const create = async () => {
     setError(null);
     try {
@@ -304,8 +313,8 @@ export default function SchedulesPage() {
       />
 
       {editSchedule && (
-        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div className="modal-panel glass w-full max-w-3xl rounded-3xl p-6 shadow-edge">
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-6" onClick={() => setEditSchedule(null)}>
+          <div className="modal-panel glass w-full max-w-3xl rounded-3xl p-6 shadow-edge" onClick={(e) => e.stopPropagation()}>
             <div className="text-xs uppercase tracking-[0.2em] text-slate">Opzioni pianificazione</div>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <div className="field md:col-span-2">
