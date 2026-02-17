@@ -46,8 +46,8 @@ function HistoryBar({ items }: { items: HistoryPoint[] }) {
       {items.map((item, i) => (
         <span
           key={i}
-          className={`h-3 w-2 rounded-full ${item.ok ? "bg-emerald-400" : "bg-rose-400"}`}
-          title={formatDetail(item)}
+          className={`status-dot h-3 w-2 rounded-full ${item.ok ? "bg-emerald-400" : "bg-rose-400"}`}
+          data-tip={formatDetail(item)}
         />
       ))}
     </div>
